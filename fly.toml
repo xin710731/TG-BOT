@@ -1,10 +1,12 @@
-app = "tg-bot-xin710731" # 这个名称必须全局唯一，可以改
+app = "tg-bot-xin710731"
 
 kill_signal = "SIGINT"
 kill_timeout = 5
 
 [env]
 PORT = "8080"
+BOT_TOKEN = "8523227582:AAHPOGm5qoTqxSBUliQTewVaiwrvpuu3UVY"
+ADMIN_IDS = "8000075268"   # ← 管理员 ID 正确放这里
 
 [experimental]
 auto_rollback = true
@@ -19,7 +21,3 @@ min_machines_running = 1
 [[services.ports]]
 port = 8080
 handlers = ["http"]
-[env]
-BOT_TOKEN="8523227582:AAHPOGm5qoTqxSBUliQTewVaiwrvpuu3UVY"
-ADMIN_IDS="8000075268"   # ← 管理员放这里
-
