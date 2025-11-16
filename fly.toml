@@ -1,23 +1,23 @@
-app = "tg-bot-xin710731"
+# fly.toml app configuration file generated for tg-bot-m6a-4g on 2025-11-16T11:24:18Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-kill_signal = "SIGINT"
-kill_timeout = 5
+app = 'tg-bot-m6a-4g'
+primary_region = 'sin'
 
-[env]
-PORT = "8080"
-BOT_TOKEN = "8523227582:AAHPOGm5qoTqxSBUliQTewVaiwrvpuu3UVY"
-ADMIN_IDS = "8000075268"   # ← 管理员 ID 正确放这里
+[build]
 
-[experimental]
-auto_rollback = true
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
 
-[[services]]
-internal_port = 8080
-protocol = "tcp"
-auto_start_machines = true
-auto_stop_machines = false     # ← 把这里改成 false
-min_machines_running = 1       # 保持至少一台机器在线
-
-[[services.ports]]
-port = 8080
-handlers = ["http"]
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024
