@@ -1046,8 +1046,31 @@ async def main():
     logging.info("调度器已启动（日报/周报/月报）。")
     await dp.start_polling(bot)
 
+# =============================================
+# Fly.io 稳定运行增强版 (防掉线 + 自动重连)
+# =============================================
+
+async def main():
+    await init_db()
+    scheduler.start()
+    logging.info("调度器已启动（日报/周报/月报）。")
+
+    while True:
+        try:
+            logging.info("启动 Telegram 打卡机器人中…")
+            await dp.start_polling(bot)
+        except Exception as e:
+            logging.error(f"❌ 机器人崩溃: {e}")
+            logging.info("将在 10 秒后自动重启 polling…")
+            await asyncio.sleep(10)  # 防止无限重启过快
+        except (KeyboardInterrupt, SystemExit):
+            logging.info("🔴 已手动停止机器人。")
+            break
+
+
 if __name__ == "__main__":
+    import asyncio
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logging.info("已停止。")
+        logging.info("🟡 已终止运行。")
