@@ -832,19 +832,56 @@ async def break_overtime_watcher(user_id: int, chat_id: int, btype: str, start_d
         if not row:
             break
         if now >= limit_dt:
-            lang = await get_chat_language(chat_id)
-            settings = await get_chat_settings(chat_id)
-            default_text = LANG_TEXT[lang]["overtime_default"].format(uid=user_id)
-            rtext = settings.get("reminder_text") or default_text
+            # --- 新逻辑：优先取 @username，如果没有则回退到 tg://user 链接 ---
             try:
+                # 尝试获取用户的 username / 显示名
+                try:
+                    member = await bot.get_chat_member(chat_id, user_id)
+                    u = member.user
+                    uname = getattr(u, "username", None)
+                    display_name = u.full_name or str(user_id)
+                except Exception:
+                    uname = None
+                    display_name = str(user_id)
+
+                if uname:
+                    mention = f"@{uname}"
+                    parse_mode = None  # plain text ok
+                else:
+                    # 回退为带链接的 HTML 提及（需要 parse_mode="HTML"）
+                    mention = f"<a href='tg://user?id={user_id}'>{html.escape(display_name)}</a>"
+                    parse_mode = "HTML"
+
+                lang = await get_chat_language(chat_id)
+                settings = await get_chat_settings(chat_id)
+
+                # 如果管理员自定义了 reminder_text，就在前面加上 mention，
+                # 否则使用默认的 overtime 文案（含 {mention}）
+                admin_text = settings.get("reminder_text")
+                if admin_text:
+                    # admin_text 可能是任意文本；我们直接把 mention 放在前面以保证提示包含用户
+                    rtext = f"{mention} {admin_text}"
+                else:
+                    rtext = LANG_TEXT[lang]["overtime_default"].format(mention=mention)
+
                 media_file = settings.get("reminder_media_file_id")
                 if media_file:
                     try:
-                        await bot.send_photo(chat_id, media_file, caption=rtext, parse_mode="HTML")
+                        # send photo — 注意：如果 parse_mode is None, caption will be plain text
+                        if parse_mode:
+                            await bot.send_photo(chat_id, media_file, caption=rtext, parse_mode=parse_mode)
+                        else:
+                            await bot.send_photo(chat_id, media_file, caption=rtext)
                     except Exception:
-                        await bot.send_message(chat_id, rtext, parse_mode="HTML")
+                        if parse_mode:
+                            await bot.send_message(chat_id, rtext, parse_mode=parse_mode)
+                        else:
+                            await bot.send_message(chat_id, rtext)
                 else:
-                    await bot.send_message(chat_id, rtext, parse_mode="HTML")
+                    if parse_mode:
+                        await bot.send_message(chat_id, rtext, parse_mode=parse_mode)
+                    else:
+                        await bot.send_message(chat_id, rtext)
             except Exception as e:
                 logger.exception(f"发送超时提醒失败: {e}")
             break
